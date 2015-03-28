@@ -19,12 +19,31 @@ runs = {
         "-r=tcp://127.0.0.1:6479;tcp://127.0.0.1:6480;tcp://127.0.0.1:6481", ],
 }
 
+runs2 = {
+    "redlock_r3": ["./build/redlock"],
+    "redlock_r5": [
+        "./build/redlock",
+        "-r=tcp://127.0.0.1:6379;tcp://127.0.0.1:6380;tcp://127.0.0.1:6381;"
+        "tcp://127.0.0.1:6382;tcp://127.0.0.1:6383",
+    ],
+    "redlock_r7": [
+        "./build/redlock",
+        "-r=tcp://127.0.0.1:6479;tcp://127.0.0.1:6480;tcp://127.0.0.1:6481;"
+        "tcp://127.0.0.1:6382;tcp://127.0.0.1:6383;tcp://127.0.0.1:6384;"
+        "tcp://127.0.0.1:6385",
+    ],
+}
+
 
 # Consistent graph colours defined for each of the runs.
 colours = {
     "nolock": "red",
     "redlock": "green",
     "redlock_withsync": "blue",
+
+    "redlock_r3": "red",
+    "redlock_r5": "green",
+    "redlock_r7": "blue",
     # "blue", "violet", "orange"
 }
 
@@ -32,22 +51,27 @@ colours = {
 # Groups of runs mapped to each graph.
 plots = {
     "rt_under_different_concurrent": ["nolock", "redlock", "redlock_withsync"],
+    "rt_under_different_redis_master": ["redlock_r3", "redlock_r5", "redlock_r7"],
 }
 
 name_cn = {
     "nolock": "无锁序列化操作",
     "redlock": "使用基于redis的分布式锁",
     "redlock_withsync": "使用基于redis实时持久化的分布式锁",
+    "redlock_r3": "3个redis master节点",
+    "redlock_r5": "5个redis master节点",
+    "redlock_r7": "7个redis master节点",
 }
 
 xlabels = {
     "rt_under_different_concurrent": "并发客户端数以2为底取对数",
+    "rt_under_different_redis_master": "并发客户端数以2为底取对数"
 }
 
 
 def run_clients(args):
     results = []
-    iter_counts = 5
+    iter_counts = 8
     total_reqs = 2 ** iter_counts
     num_clients = [2**i for i in xrange(iter_counts)]
     req_per_cli = [total_reqs / num_clients[i] for i in xrange(iter_counts)]
@@ -64,7 +88,11 @@ def run_clients(args):
         print run_args
         out = check_output(run_args, stderr=PIPE)
 
-        results.append('{:.3f}'.format(float(out.split(" ")[2].strip()) / total_reqs))
+        results.append(
+            '{:.3f}'.format(
+                float(
+                    out.split(" ")[2].strip()) /
+                total_reqs))
 
     sys.stdout.write("\n")
     return results
@@ -83,6 +111,10 @@ def bench():
     prepare()
 
     for name, args in runs.iteritems():
+        with open(output_path(name + ".dat"), "w") as f:
+            f.write("\n".join(run_clients(args)))
+
+    for name, args in runs2.iteritems():
         with open(output_path(name + ".dat"), "w") as f:
             f.write("\n".join(run_clients(args)))
 
