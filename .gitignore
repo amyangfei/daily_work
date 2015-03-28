@@ -1,0 +1,11 @@
+# build and test
+*.log
+build/
+output/
+
+# redis persistent file
+*.aof
+*.rdb
+
+# etcd data
+default.etcd/
