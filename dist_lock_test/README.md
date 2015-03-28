@@ -26,3 +26,6 @@ Run etcd, redis master on a same machine with
 
 Benchmark comparison when changing concurrent clients from 2^0 to 2^9
 ![benchmark changing client concurrent](./docs/images/rt_under_different_concurrent.png)
+
+Benchmark using distributed lock with different number of redis master
+![benchmark with different redis master number](./docs/images/rt_under_different_redis_master.png)
