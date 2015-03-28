@@ -18,3 +18,11 @@ redis can be set with aof and fsync=always support and no aof
     ./ctrl_redis_etcd.sh start
     python bench.py
 
+### Sample benchmark results
+
+Run etcd, redis master on a same machine with
+* 4-core cpu Intel Xeon E5-2630 0 @ 2.30GHz, 8GB memory.
+* host os Ubuntu 14.04.2 LTS X86_64 with Linux kernel 3.13.0-32-generic.
+
+Benchmark comparison when changing concurrent clients from 2^0 to 2^9
+![benchmark changing client concurrent](./docs/images/rt_under_different_concurrent.png)
