@@ -2,6 +2,7 @@
 
 redis_bin="/usr/local/bin/redis-server"
 etcd_bin="/usr/local/bin/etcd"
+cur=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 sep="----------------------------------------------------"
 red='\e[0;31m'
@@ -28,14 +29,17 @@ show_help() {
 }
 
 start() {
-    echo "starting redis servers..."
-    $redis_bin --port 6379 $* > /dev/null &
-    $redis_bin --port 6380 $* > /dev/null &
-    $redis_bin --port 6381 $* > /dev/null &
+    mkdir -p $cur/build/redis_6379 $cur/build/redis_6380 $cur/build/redis_6381
+    mkdir -p $cur/build/redis_6479 $cur/build/redis_6480 $cur/build/redis_6481
 
-    $redis_bin --port 6479 --appendonly yes --appendfsync always > /dev/null &
-    $redis_bin --port 6480 --appendonly yes --appendfsync always > /dev/null &
-    $redis_bin --port 6481 --appendonly yes --appendfsync always > /dev/null &
+    echo "starting redis servers..."
+    $redis_bin --port 6379 --dir $cur/build/redis_6379 $* > /dev/null &
+    $redis_bin --port 6380 --dir $cur/build/redis_6380 $* > /dev/null &
+    $redis_bin --port 6381 --dir $cur/build/redis_6381 $* > /dev/null &
+
+    $redis_bin --port 6479 --dir $cur/build/redis_6479 --appendonly yes --appendfsync always > /dev/null &
+    $redis_bin --port 6480 --dir $cur/build/redis_6480 --appendonly yes --appendfsync always > /dev/null &
+    $redis_bin --port 6481 --dir $cur/build/redis_6481 --appendonly yes --appendfsync always > /dev/null &
 
     $etcd_bin > /dev/null &
 }
