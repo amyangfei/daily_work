@@ -42,12 +42,11 @@ func getEtcdClient(machines []string) *etcd.Client {
 	return etcd.NewClient(machines)
 }
 
-// return true to stop the benchmark
-func processNotify(data *etcd.Response, stop chan bool, ts *TestSuit) {
+// return true to stop the watcher
+func processNotify(data *etcd.Response, stop chan bool, ts *TestSuit) bool {
 	if data == nil {
 		ts.failcount++
-		fmt.Printf("fail count %d\n", ts.failcount)
-		return
+		return true
 	}
 	if data.Action == EtcdActionUpdate {
 		now := time.Now().UnixNano()
@@ -63,9 +62,12 @@ func processNotify(data *etcd.Response, stop chan bool, ts *TestSuit) {
 			ts.latencySum += latency
 		}
 	}
+	return false
 }
 
-func UpdateWatcher(c *etcd.Client, prefix string, ts *TestSuit) {
+// return true to stop the watcher, return false to end the monitor.
+func UpdateWatcher(machines []string, prefix string, ts *TestSuit) bool {
+	c := getEtcdClient(machines)
 	receiver := make(chan *etcd.Response)
 	stop := make(chan bool)
 
@@ -79,16 +81,21 @@ func UpdateWatcher(c *etcd.Client, prefix string, ts *TestSuit) {
 	for {
 		select {
 		case data := <-receiver:
-			processNotify(data, stop, ts)
+			if processNotify(data, stop, ts) {
+				// omit clean work for benchmark accuracy
+				return true
+			}
 		case <-time.After(time.Second * 1):
 			if ts.stop {
-				return
+				stop <- true
+				return false
 			}
 		}
 	}
 }
 
-func StopWatcher(c *etcd.Client, prefix string, ts *TestSuit) {
+func StopWatcher(machines []string, prefix string, ts *TestSuit) {
+	c := getEtcdClient(machines)
 	_, err := c.Watch(prefix, 0, false, nil, nil)
 	if err != nil {
 		fmt.Printf("stop watcher return with error: %v", err)
@@ -123,8 +130,6 @@ func Output(ts *TestSuit) {
 
 func main() {
 	machines := strings.Split(*EtcdAddr, ";")
-	c := getEtcdClient(machines)
-	c2 := getEtcdClient(machines)
 	ts := &TestSuit{
 		running:    false,
 		stop:       false,
@@ -137,6 +142,10 @@ func main() {
 
 	defer Output(ts)
 
-	go StopWatcher(c2, StopKey, ts)
-	UpdateWatcher(c, KeyBase, ts)
+	go StopWatcher(machines, StopKey, ts)
+
+	var stop bool = true
+	for stop {
+		stop = UpdateWatcher(machines, KeyBase, ts)
+	}
 }
