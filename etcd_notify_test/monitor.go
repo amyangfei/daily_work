@@ -50,7 +50,13 @@ func processNotify(data *etcd.Response, stop chan bool, ts *TestSuit) bool {
 	}
 	if data.Action == EtcdActionUpdate {
 		now := time.Now().UnixNano()
-		if !ts.running {
+		// first update notification
+		if ts.start == 0 {
+			ts.start = now
+			return false
+		}
+		// omit the first second
+		if !ts.running && (now-ts.start) > 1e9 {
 			ts.running = true
 			ts.start = now
 		}

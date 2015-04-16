@@ -86,6 +86,8 @@ func randomEtcdUpdate(c *Client) {
 }
 
 func cliRoutine(cli *Client, freq float64, stop chan bool) {
+	// wait random time less than 1 second
+	time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 	microFreq := int(freq * 1e6)
 	ticker := time.NewTicker(time.Microsecond * time.Duration(microFreq))
 	for {
@@ -94,7 +96,6 @@ func cliRoutine(cli *Client, freq float64, stop chan bool) {
 			randomEtcdUpdate(cli)
 		case s := <-stop:
 			if s {
-				fmt.Printf("cli %s routine done\n", cli.name)
 				return
 			}
 		}
