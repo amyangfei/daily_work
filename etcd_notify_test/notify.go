@@ -19,6 +19,7 @@ var EtcdAddr = flag.String("m", "http://localhost:4001", "string array of etcd a
 var RunTime = flag.Int("t", 30, "run time in second")
 
 var KeyBase string = "/update/t"
+var StopKey string = "/update/s/stop"
 var KeyNum int = 4
 var minKeySize = 16
 var AttrNames []string
@@ -137,10 +138,14 @@ func HandleSignal(c chan os.Signal, clis []*Client) {
 }
 
 func cleanWork(clis []*Client) {
-	fmt.Printf("do clean work...\n")
+	fmt.Printf("set stop flag and do clean work...\n")
 	for _, c := range clis {
 		k := fmt.Sprintf("%s/%s", KeyBase, c.name)
 		c.cli.Delete(k, true)
+	}
+	now := time.Now().UnixNano()
+	if _, err := clis[0].cli.Set(StopKey, fmt.Sprintf("%d", now), 0); err != nil {
+		panic(err)
 	}
 }
 
